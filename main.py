@@ -27,6 +27,9 @@ def get_Chaindata(info):
   #Fetch Total supply data
   elif info=="total_supply":
     response = requests.get("http://35.172.164.222:1317/cosmos/bank/v1beta1/supply")
+  #Fetch Inflation data
+  elif info=="inflation":
+    response = requests.get("http://35.172.164.222:1317/minting/inflation")
   #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
@@ -98,7 +101,15 @@ async def on_message(message):
     #Send message
     await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2))))
 
-
+  #Request Inflation information
+  if msg.lower().startswith('-inflation'):
+    #Get full supply data
+    inflation_data=get_Chaindata("inflation")
+    inflation=inflation_data['result']
+    #Convert to percentage
+    inflation_percentage=float(inflation)*100
+      #Send message
+    await message.channel.send("Inflation: " + str('{:,}'.format(round(float(inflation_percentage),2)))+ "%")
 Keep_alive()
 client.run(token)
 
