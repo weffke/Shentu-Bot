@@ -8,8 +8,11 @@ client = discord.Client()
 token = os.environ['TOKEN']
 
 #Fetch Data
-def get_data():
-  response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=certik")
+def get_data(cur):
+  if cur=="eur" or cur=="€" or cur=="euro":
+    response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=certik")
+  elif cur=="" or cur=="usd" or cur=="$":
+    response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=certik")
   json_data = json.loads(response.text)
   return(json_data)
 
@@ -26,13 +29,22 @@ async def on_message(message):
   msg = message.content
 
 #Reply with correct answer
-  if msg.startswith('-price'):
-    full_data=get_data()
+  if msg.lower().startswith('-price'):
+    try:
+      currency = msg.lower().split(' ')[1]
+    except:
+      currency = "$"
+    full_data=get_data(currency)
     price = full_data[0]['current_price']
     high =full_data[0]['high_24h']
     low = full_data[0]['low_24h']
     price_change = full_data[0]['price_change_24h']
-    await message.channel.send( "**Current price: $" + str(price)+ "**\n24H high: $" + str(high) + "\n24H low: $" +str(low) + "\n24H price change: $" + str(price_change))
+    if currency=="eur" or currency=="€" or currency=="euro":
+      currency = "€"
+    elif currency=="" or currency=="usd" or currency=="$":
+      currency = "$"
+
+    await message.channel.send( "**Current price: "+ currency + str(price)+ "**\n24H high: "+ currency + str(high) + "\n24H low: "+ currency +str(low) + "\n24H price change: "+ currency + str(price_change))
 
 
 
