@@ -103,13 +103,24 @@ async def on_message(message):
 
   #Request Inflation information
   if msg.lower().startswith('-inflation'):
-    #Get full supply data
+    #Get inflation data
     inflation_data=get_Chaindata("inflation")
     inflation=inflation_data['result']
     #Convert to percentage
     inflation_percentage=float(inflation)*100
-      #Send message
+    #Send message
     await message.channel.send("Inflation: " + str('{:,}'.format(round(float(inflation_percentage),2)))+ "%")
+
+  #Request staking APY
+  #if msg.lower().startswith('-apy'):
+    #Get APY data
+    ##apy_data=get_Chaindata("apy")
+    ##apy=apy_data['result']
+    #Convert to percentage
+    ##apy_percentage=float(apy)*100
+    #Send message
+    ##await message.channel.send("Inflation: " + str('{:,}'.format(round(float(apy_percentage),2)))+ "%")
+
 Keep_alive()
 client.run(token)
 
