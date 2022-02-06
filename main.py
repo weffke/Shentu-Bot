@@ -85,7 +85,7 @@ async def on_message(message):
     #Calculate staked %
     staked_percentage=(int(uctk_bonded)/int(uctk_total_supply))*100
     #Send message
-    await message.channel.send("Total supply: " + str(round(float(total_supply),2)) + "\nBonded (staked): " + str(round(float(bonded),2))+ "CTK \nUnbonded: " + str(round(float(not_bonded),2)) + "CTK\nStaked Percentage: "+ str(round(float(staked_percentage),2)) +"%")
+    await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2))) + "\nBonded (staked): " + str('{:,}'.format(round(float(bonded),2)))+ "CTK \nUnbonded: " + str('{:,}'.format(round(float(not_bonded),2))) + "CTK\nStaked Percentage: "+ str('{:,}'.format(round(float(staked_percentage),2))) +"%")
 
   #Request Total supply
   if msg.lower().startswith('-total'):
@@ -96,7 +96,7 @@ async def on_message(message):
     #Convert from uctk to CTK
     total_supply=int(uctk_total_supply)/1000000
     #Send message
-    await message.channel.send("Total supply: " + str(round(float(total_supply),2)))
+    await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2))))
 
 
 Keep_alive()
