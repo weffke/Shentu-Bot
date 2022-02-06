@@ -9,18 +9,25 @@ token = os.environ['TOKEN']
 
 #Fetch Data from CoinGecko
 def get_CGdata(cur):
+  #Fetch Euro data
   if cur=="eur" or cur=="€" or cur=="euro":
     response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=certik")
+  #Fetch USD data
   elif cur=="" or cur=="usd" or cur=="$":
     response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=certik")
+  #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
 
+#Fetch Data from Shentu Chain
 def get_Chaindata(info):
+  #Fetch Staking data
   if info=="staked":
     response = requests.get("http://35.172.164.222:1317/staking/pool")
+  #Fetch Total supply data
   elif info=="total_supply":
     response = requests.get("http://35.172.164.222:1317/cosmos/bank/v1beta1/supply")
+  #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
 
@@ -40,37 +47,56 @@ async def on_message(message):
   
   #Request prices from CoinGecko
   if msg.lower().startswith('-price'):
+    #Check for given Currency
     try:
       currency = msg.lower().split(' ')[1]
+    #Use USD if no currency is given
     except:
       currency = "$"
+    #Get price data
     full_data=get_CGdata(currency)
     price = full_data[0]['current_price']
     high =full_data[0]['high_24h']
     low = full_data[0]['low_24h']
     price_change = full_data[0]['price_change_24h']
+    #Convert to correct currency sign
     if currency=="eur" or currency=="€" or currency=="euro":
       currency = "€"
     elif currency=="" or currency=="usd" or currency=="$":
       currency = "$"
-
+    #Send message
     await message.channel.send( "**Current price: "+ currency + str(price)+ "**\n24H high: "+ currency + str(high) + "\n24H low: "+ currency +str(low) + "\n24H price change: "+ currency + str(price_change))
   
   #Request Staking info
   if msg.lower().startswith('-staked'):
+    #Get staking data
     staking_data=get_Chaindata("staked")
     result_data=staking_data['result']
     uctk_not_bonded=result_data['not_bonded_tokens']
     uctk_bonded=result_data['bonded_tokens']
-    bonded=int(uctk_bonded)/1000000
-    not_bonded=int(uctk_not_bonded)/1000000
+    #Get full supply data
     supply_data=get_Chaindata("total_supply")
     supply_dataset=supply_data['supply']
     uctk_total_supply=supply_dataset[2]['amount']
+    #Convert from uctk to CTK
     total_supply=int(uctk_total_supply)/1000000
-    staked_percentage=(int(bonded)/int(total_supply))*100
-    await message.channel.send("Total supply: " + str(total_supply) + "\nBonded (staked): " + str(bonded)+ "CTK \nUnbonded: " + str(not_bonded) + "CTK\nStaked Percentage:"+ str(staked_percentage) +"%")
+    bonded=int(uctk_bonded)/1000000
+    not_bonded=int(uctk_not_bonded)/1000000
+    #Calculate staked %
+    staked_percentage=(int(uctk_bonded)/int(uctk_total_supply))*100
+    #Send message
+    await message.channel.send("Total supply: " + str(round(float(total_supply),2)) + "\nBonded (staked): " + str(round(float(bonded),2))+ "CTK \nUnbonded: " + str(round(float(not_bonded),2)) + "CTK\nStaked Percentage: "+ str(round(float(staked_percentage),2)) +"%")
 
+  #Request Total supply
+  if msg.lower().startswith('-total'):
+    #Get full supply data
+    supply_data=get_Chaindata("total_supply")
+    supply_dataset=supply_data['supply']
+    uctk_total_supply=supply_dataset[2]['amount']
+    #Convert from uctk to CTK
+    total_supply=int(uctk_total_supply)/1000000
+    #Send message
+    await message.channel.send("Total supply: " + str(round(float(total_supply),2)))
 
 
 Keep_alive()
