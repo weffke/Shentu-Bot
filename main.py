@@ -7,24 +7,25 @@ from Keep_alive import Keep_alive
 client = discord.Client()
 token = os.environ['TOKEN']
 
-
+#Fetch Data
 def get_data():
   response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=certik")
   json_data = json.loads(response.text)
   return(json_data)
 
-
+#Discord Login
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
 
 @client.event
+#Read Messages
 async def on_message(message):
   if message.author == client.user:
     return
-
   msg = message.content
 
+#Reply with correct answer
   if msg.startswith('-price'):
     full_data=get_data()
     price = full_data[0]['current_price']
