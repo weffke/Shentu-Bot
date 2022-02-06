@@ -2,7 +2,6 @@ import discord
 import os
 import requests
 import json
-from replit import db
 from Keep_alive import Keep_alive
 
 client = discord.Client()
@@ -39,3 +38,4 @@ async def on_message(message):
 
 Keep_alive()
 client.run(token)
+
