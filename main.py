@@ -47,10 +47,13 @@ def get_validatordata(validator_address):
   json_data = json.loads(response.text)
   return(json_data)
 
+
 #Discord Login
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
+
+
 
 #Read Messages
 @client.event
@@ -100,8 +103,12 @@ async def on_message(message):
     not_bonded=int(uctk_not_bonded)/1000000
     #Calculate staked %
     staked_percentage=(int(uctk_bonded)/int(uctk_total_supply))*100
+    inflation_data=get_Chaindata("inflation")
+    inflation=inflation_data['result']
+    #calculate yield
+    yield_percentage=float(uctk_total_supply)/float(uctk_bonded)*float(inflation)*100
     #Send message
-    await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2))) + "\nBonded (staked): " + str('{:,}'.format(round(float(bonded),2)))+ "CTK \nUnbonded: " + str('{:,}'.format(round(float(not_bonded),2))) + "CTK\nStaked Percentage: "+ str('{:,}'.format(round(float(staked_percentage),2))) +"%")
+    await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2))) + "CTK\nBonded (staked): " + str('{:,}'.format(round(float(bonded),2)))+ "CTK \nUnbonding: " + str('{:,}'.format(round(float(not_bonded),2))) + "CTK\nStaked Percentage: "+ str('{:,}'.format(round(float(staked_percentage),2))) +"%\nYield: "+str('{:,}'.format(round(float(yield_percentage),2)))+ "%")
 
   #Request Total supply
   if msg.lower().startswith('-total'):
@@ -112,7 +119,7 @@ async def on_message(message):
     #Convert from uctk to CTK
     total_supply=int(uctk_total_supply)/1000000
     #Send message
-    await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2))))
+    await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2)))+"CTK")
 
   #Request Inflation information
   if msg.lower().startswith('-inflation'):
@@ -124,15 +131,23 @@ async def on_message(message):
     #Send message
     await message.channel.send("Inflation: " + str('{:,}'.format(round(float(inflation_percentage),2)))+ "%")
 
-  #Request staking APY
-  #if msg.lower().startswith('-apy') or msg.lower().startswith('-yield'):
-    #Get APY data
-    ##apy_data=get_Chaindata("apy")
-    ##apy=apy_data['result']
-    #Convert to percentage
-    ##apy_percentage=float(apy)*100
+  #Request staking yield
+  if msg.lower().startswith('-apy') or msg.lower().startswith('-yield') or msg.lower().startswith('-apr'):
+    #Get full supply data
+    supply_data=get_Chaindata("total_supply")
+    supply_dataset=supply_data['supply']
+    uctk_total_supply=supply_dataset[2]['amount']
+    #Get staking data
+    staking_data=get_Chaindata("staked")
+    result_data=staking_data['result']
+    uctk_bonded=result_data['bonded_tokens']
+    #Get inflation data
+    inflation_data=get_Chaindata("inflation")
+    inflation=inflation_data['result']
+    #calculate yield %
+    yield_percentage=float(uctk_total_supply)/float(uctk_bonded)*float(inflation)*100
     #Send message
-    ##await message.channel.send("Inflation: " + str('{:,}'.format(round(float(apy_percentage),2)))+ "%")
+    await message.channel.send("Inflation: " + str('{:,}'.format(round(float(yield_percentage),2)))+ "%")
 
   #Request unbonding Validators
   if msg.lower().startswith('-jailed') or msg.lower().startswith('-unbonding'):
