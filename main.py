@@ -19,7 +19,7 @@ def get_CGdata(cur):
   json_data = json.loads(response.text)
   return(json_data)
 
-#Fetch Data from Shentu Chain
+#Fetch chain Data from Shentu Chain
 def get_Chaindata(info):
   #Fetch Staking data
   if info=="staked":
@@ -30,7 +30,20 @@ def get_Chaindata(info):
   #Fetch Inflation data
   elif info=="inflation":
     response = requests.get("http://35.172.164.222:1317/minting/inflation")
+  #Fetch Inflation data
+  ##elif info=="apy":
+    ##response = requests.get("http://35.172.164.222:1317/minting/inflation")
+  #Fetch unbonding validators
+  elif info=="unbonding":
+    response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_UNBONDING")
   #Load data and return
+  json_data = json.loads(response.text)
+  return(json_data)
+
+#Fetch validator Data from Shentu Chain
+def get_validatordata(validator_address):
+  #Fetch Validator data for the given address
+  response = requests.get("http://35.172.164.222:1317/staking/validators/" + validator_address)
   json_data = json.loads(response.text)
   return(json_data)
 
@@ -112,7 +125,7 @@ async def on_message(message):
     await message.channel.send("Inflation: " + str('{:,}'.format(round(float(inflation_percentage),2)))+ "%")
 
   #Request staking APY
-  #if msg.lower().startswith('-apy'):
+  #if msg.lower().startswith('-apy') or msg.lower().startswith('-yield'):
     #Get APY data
     ##apy_data=get_Chaindata("apy")
     ##apy=apy_data['result']
@@ -120,6 +133,27 @@ async def on_message(message):
     ##apy_percentage=float(apy)*100
     #Send message
     ##await message.channel.send("Inflation: " + str('{:,}'.format(round(float(apy_percentage),2)))+ "%")
+
+  #Request unbonding Validators
+  if msg.lower().startswith('-jailed') or msg.lower().startswith('-unbonding'):
+    #Initialize string
+    unbinding_validator_list=""
+    #Get unbonding validator data
+    unbonding_data=get_Chaindata("unbonding")
+    #Loop through all unbinding validators
+    for i in unbonding_data['result']:
+     #Store address of unbinding validator
+     unbinding_validator_address= i['operator_address']
+     #Fetch Validator data
+     unbinding_validator_data= get_validatordata(unbinding_validator_address)
+     #Fetch Validator moniker (name)
+     unbinding_validator_result_data=unbinding_validator_data['result']
+     unbinding_validator_description_data=unbinding_validator_result_data['description']
+     unbinding_validator_moniker=unbinding_validator_description_data['moniker']
+     #Build string to use in the message
+     unbinding_validator_list+="**" + unbinding_validator_moniker + "** - " + unbinding_validator_address + "\n"   
+    #Send message
+    await message.channel.send(unbinding_validator_list)
 
 Keep_alive()
 client.run(token)
