@@ -2,11 +2,14 @@ import discord
 import os
 import requests
 import json
-from Keep_alive import Keep_alive
 from discord.ext import tasks
+from dotenv import load_dotenv
+load_dotenv()
 
 client = discord.Client()
-token = os.environ['TOKEN']
+token = os.environ.get('TOKEN')
+warning_channel_production="940694796274663445"
+warning_channel_test="933479922402484224"
 
 #Fetch Data from CoinGecko
 def get_CGdata(cur):
@@ -57,13 +60,13 @@ async def on_ready():
   jailed.start()
 
 
-@tasks.loop(seconds=15.0)
+@tasks.loop(seconds=30.0)
 async def jailed():
   #Initialize variable
   known_jailed=0
   new_list = ""
   #Define channel to post in
-  channel = await client.fetch_channel('933479922402484224')
+  channel = await client.fetch_channel(warning_channel_production)
   #Read the known jailed validators
   f = open("jail.dat", "r")
   old_list=f.read()
@@ -211,6 +214,6 @@ async def on_message(message):
     #Send message
     await message.channel.send(unbinding_validator_list)
 
-Keep_alive()
+#Keep_alive()
 client.run(token)
 
