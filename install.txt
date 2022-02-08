@@ -1,0 +1,8 @@
+sudo apt install -y python3
+sudo apt install -y python3-pip
+pip3 install discord
+pip3 install python-dotenv
+
+touch jail.dat
+
+copy over .env for the bot token
