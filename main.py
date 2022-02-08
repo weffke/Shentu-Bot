@@ -3,6 +3,7 @@ import os
 import requests
 import json
 from Keep_alive import Keep_alive
+from discord.ext import tasks
 
 client = discord.Client()
 token = os.environ['TOKEN']
@@ -52,8 +53,37 @@ def get_validatordata(validator_address):
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
+  jailed.start()
 
 
+@tasks.loop(seconds=15.0)
+async def jailed():
+  known_jailed=0
+  f = open("jail.dat", "r")
+  old_list=f.read()
+  f.close()
+  known_jailed_addresses=old_list.split('-')
+  new_list = ""
+  channel = await client.fetch_channel('933479922402484224')
+  unbonding_data=get_Chaindata("unbonding")
+  for i in unbonding_data['result']:
+    #Store address of unbinding validator
+    unbinding_validator_address= i['operator_address']
+    for jailed_address in known_jailed_addresses:
+      if unbinding_validator_address == jailed_address:
+        known_jailed=1
+    if known_jailed==0:
+      #Fetch Validator data
+      unbinding_validator_data= get_validatordata(unbinding_validator_address)
+      #Fetch Validator moniker (name)
+      unbinding_validator_result_data=unbinding_validator_data['result']
+      unbinding_validator_description_data=unbinding_validator_result_data['description']
+      unbinding_validator_moniker=unbinding_validator_description_data['moniker']
+      await channel.send(":warning::warning:**Validator jailed**:warning::warning:\n""**" + unbinding_validator_moniker + "** - " + unbinding_validator_address)
+    new_list+=unbinding_validator_address + "-"
+  f = open("jail.dat", "w")
+  f.write(new_list)
+  f.close
 
 #Read Messages
 @client.event
