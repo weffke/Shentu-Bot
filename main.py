@@ -53,25 +53,33 @@ def get_validatordata(validator_address):
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
+  #Start the Jailed check
   jailed.start()
 
 
 @tasks.loop(seconds=15.0)
 async def jailed():
+  #Initialize variable
   known_jailed=0
+  new_list = ""
+  #Define channel to post in
+  channel = await client.fetch_channel('933479922402484224')
+  #Read the known jailed validators
   f = open("jail.dat", "r")
   old_list=f.read()
   f.close()
+  #Make a list of known jailed addresses by splitting the jail.dat file content
   known_jailed_addresses=old_list.split('-')
-  new_list = ""
-  channel = await client.fetch_channel('933479922402484224')
+  #Fetch full list of jailed validators
   unbonding_data=get_Chaindata("unbonding")
   for i in unbonding_data['result']:
-    #Store address of unbinding validator
+    #Store address of unbinding validator for this loop
     unbinding_validator_address= i['operator_address']
+    #loop through the known addresses to verify if it is a new one
     for jailed_address in known_jailed_addresses:
       if unbinding_validator_address == jailed_address:
         known_jailed=1
+    #If jailed validator isn't known yet post in channel (skip if already known)
     if known_jailed==0:
       #Fetch Validator data
       unbinding_validator_data= get_validatordata(unbinding_validator_address)
@@ -79,8 +87,11 @@ async def jailed():
       unbinding_validator_result_data=unbinding_validator_data['result']
       unbinding_validator_description_data=unbinding_validator_result_data['description']
       unbinding_validator_moniker=unbinding_validator_description_data['moniker']
+      #Send message
       await channel.send(":warning::warning:**Validator jailed**:warning::warning:\n""**" + unbinding_validator_moniker + "** - " + unbinding_validator_address)
+    #Append new jailed validator list 
     new_list+=unbinding_validator_address + "-"
+  #Overwrite known jailed validators
   f = open("jail.dat", "w")
   f.write(new_list)
   f.close
