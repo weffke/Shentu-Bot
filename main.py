@@ -2,8 +2,9 @@ import discord
 import os
 import requests
 import json
-from discord.ext import tasks
+from discord.ext import tasks, commands
 from dotenv import load_dotenv
+
 load_dotenv()
 
 client = discord.Client()
@@ -34,9 +35,6 @@ def get_Chaindata(info):
   #Fetch Inflation data
   elif info=="inflation":
     response = requests.get("http://35.172.164.222:1317/minting/inflation")
-  #Fetch Inflation data
-  ##elif info=="apy":
-    ##response = requests.get("http://35.172.164.222:1317/minting/inflation")
   #Fetch unbonding validators
   elif info=="unbonding":
     response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_UNBONDING")
@@ -58,6 +56,7 @@ async def on_ready():
   print('We have logged in as {0.user}'.format(client))
   #Start the Jailed check
   jailed.start()
+  
 
 
 @tasks.loop(seconds=30.0)
@@ -213,7 +212,49 @@ async def on_message(message):
      unbinding_validator_list+="**" + unbinding_validator_moniker + "** - " + unbinding_validator_address + "\n"   
     #Send message
     await message.channel.send(unbinding_validator_list)
+  
+  #Request shentu site link
+  if msg.lower().startswith('-site'):
+    #Send message
+    await message.channel.send("**You can find the official website at: <https://www.shentu.technology>** \n*for more useful links visit* #resources")
+  
+  #Request Whitepaper link
+  if msg.lower().startswith('-whitepaper'):
+    #Send message
+    await message.channel.send("**You can find the whitepaper at: <https://www.shentu.technology/whitepaper>** \n*for more useful links visit* #resources")
+  
+  #Request official wallet link
+  if msg.lower().startswith('-wallet') or msg.lower().startswith('-deepwallet'):
+    #Send message
+    await message.channel.send("**You can find Shentu's official wallet, DeepWallet at: <https://wallet.shentu.technology>** \n*for more useful links visit* #resources")
+  
+  #Request official chain explorer
+  if msg.lower().startswith('-chain') or msg.lower().startswith('-explorer'):
+    #Send message
+    await message.channel.send("**You can find the shentu chain explorer at: <https://explorer.shentu.technology>** \n*for more useful links visit* #resources")
+  
+  #Request Shield link
+  if msg.lower().startswith('-shieldinfo') or msg.lower().startswith('-shieldweb'):
+    #Send message
+    await message.channel.send("**You can find the whitepaper at <https://shield.shentu.technology>** \n*for more useful links visit* #resources")
+  
+  #Request Resources link
+  if msg.lower().startswith('-useful') or msg.lower().startswith('-resources') or msg.lower().startswith('-links'):
+    #Send message
+    f = open("resources.msg", "r")
+    resources_text=f.read()
+    f.close()
+    await message.channel.send(resources_text)
+  
+  #Request Resources link
+  if msg.lower().startswith('-setuseful'):
+    new_resources_text = msg.partition(' ')[2]
+    f = open("resources.msg", "w")
+    f.write(new_resources_text)
+    f.close
+    
 
-#Keep_alive()
+  
+    
 client.run(token)
 
