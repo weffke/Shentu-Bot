@@ -23,12 +23,8 @@ chain_role_id = os.environ.get('chain_role_id')
 
 #Fetch Data from CoinGecko
 def get_CGdata(cur):
-  #Fetch Euro data
-  if cur=="eur" or cur=="€" or cur=="euro":
-    response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=certik")
-  #Fetch USD data
-  elif cur=="" or cur=="usd" or cur=="$":
-    response = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=certik")
+  coingecko_link = "https://api.coingecko.com/api/v3/coins/markets?vs_currency="+cur+"&ids=certik"
+  response = requests.get(coingecko_link)
   #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
@@ -144,19 +140,50 @@ async def on_message(message):
     #Use USD if no currency is given
     except:
       currency = "$"
+    #Request data and convert to correct currency sign
+    if currency=="eur" or currency=="€" or currency=="euro":
+      currency = "eur"
+      full_data=get_CGdata(currency)
+      currency_sign = "€"
+    elif currency=="" or currency=="usd" or currency=="$" or currency=="dollar":
+      currency = "usd"
+      full_data=get_CGdata(currency)
+      currency_sign = "$"
+    elif currency=="pound" or currency=="gbp" or currency=="£":
+      currency = "gbp"
+      full_data=get_CGdata(currency)
+      currency_sign = "£"
+    elif currency=="yen" or currency=="jpy" or currency=="¥":
+      currency = "jpy"
+      full_data=get_CGdata(currency)
+      currency_sign = "¥"
+    elif currency=="yuan" or currency=="cny" or currency=="¥":
+      currency = "cny"
+      full_data=get_CGdata(currency)
+      currency_sign = "¥"
+    elif currency=="rubles" or currency=="rub" or currency=="₽":
+      currency = "rub"
+      full_data=get_CGdata(currency)
+      currency_sign = "₽"
+    elif currency=="twd" or currency=="ntdollar" or currency=="NT$":
+      currency = "twd"
+      full_data=get_CGdata(currency)
+      currency_sign = "NT$"
+    elif currency=="idr" or currency=="rupiah" or currency=="Rp":
+      currency = "idr"
+      full_data=get_CGdata(currency)
+      currency_sign = "Rp"
+    elif currency=="won" or currency=="krw" or currency=="₩":
+      currency = "krw"
+      full_data=get_CGdata(currency)
+      currency_sign = "₩"
     #Get price data
-    full_data=get_CGdata(currency)
     price = full_data[0]['current_price']
     high =full_data[0]['high_24h']
     low = full_data[0]['low_24h']
     price_change = full_data[0]['price_change_24h']
-    #Convert to correct currency sign
-    if currency=="eur" or currency=="€" or currency=="euro":
-      currency = "€"
-    elif currency=="" or currency=="usd" or currency=="$":
-      currency = "$"
     #Send message
-    await message.channel.send( "**Current price: "+ currency + str(price)+ "**\n24H high: "+ currency + str(high) + "\n24H low: "+ currency +str(low) + "\n24H price change: "+ currency + str(price_change))
+    await message.channel.send( "**Current price: "+ currency_sign + str('{:,}'.format(round(float(price),2)))+ "**\n24H high: "+ currency_sign + str('{:,}'.format(round(float(high),2))) + "\n24H low: "+ currency_sign +str('{:,}'.format(round(float(low),2))) + "\n24H price change: "+ currency_sign + str('{:,}'.format(round(float(price_change),4))))
   
   #Request Staking info
   if msg.lower().startswith('-staked'):
