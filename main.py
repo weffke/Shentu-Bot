@@ -7,10 +7,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.members = True  # Subscribe to the privileged members intent.
+client = discord.Client(intents=intents)
 token = os.environ.get('TOKEN')
-warning_channel_production="940694796274663445"
-warning_channel_test="933479922402484224"
+
+warning_channel_production = os.environ.get('warning_channel_production')
+warning_channel_test = os.environ.get('warning_channel_test')
+resources_channel_production = os.environ.get('resources_channel_production')
+bot_help_channel_production = os.environ.get('bot_help_channel_production')
+production_server_id = os.environ.get('production_server_id')
+admin_role_id = os.environ.get('admin_role_id')
+shentu_role_id = os.environ.get('shentu_role_id')
+chain_role_id = os.environ.get('chain_role_id')
 
 #Fetch Data from CoinGecko
 def get_CGdata(cur):
@@ -54,8 +63,11 @@ def get_validatordata(validator_address):
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
+  #set status
+  discord.CustomActivity(name="-shentuhelp for info", emoji='🖥️')
   #Start the Jailed check
   jailed.start()
+
   
 
 
@@ -104,6 +116,7 @@ async def on_message(message):
   if message.author == client.user:
     return
   msg = message.content
+  
 
 #Reply with correct answer
   
@@ -216,42 +229,77 @@ async def on_message(message):
   #Request shentu site link
   if msg.lower().startswith('-site'):
     #Send message
-    await message.channel.send("**You can find the official website at: <https://www.shentu.technology>** \n*for more useful links visit* #resources")
+    await message.channel.send("**You can find the official website at: <https://www.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
   
   #Request Whitepaper link
   if msg.lower().startswith('-whitepaper'):
     #Send message
-    await message.channel.send("**You can find the whitepaper at: <https://www.shentu.technology/whitepaper>** \n*for more useful links visit* #resources")
+    await message.channel.send("**You can find the whitepaper at: <https://www.shentu.technology/whitepaper>** \n*for more useful links visit* <#resources_channel_production>")
   
   #Request official wallet link
   if msg.lower().startswith('-wallet') or msg.lower().startswith('-deepwallet'):
     #Send message
-    await message.channel.send("**You can find Shentu's official wallet, DeepWallet at: <https://wallet.shentu.technology>** \n*for more useful links visit* #resources")
+    await message.channel.send("**You can find Shentu's official wallet, DeepWallet at: <https://wallet.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
   
   #Request official chain explorer
   if msg.lower().startswith('-chain') or msg.lower().startswith('-explorer'):
     #Send message
-    await message.channel.send("**You can find the shentu chain explorer at: <https://explorer.shentu.technology>** \n*for more useful links visit* #resources")
+    await message.channel.send("**You can find the shentu chain explorer at: <https://explorer.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
   
   #Request Shield link
   if msg.lower().startswith('-shieldinfo') or msg.lower().startswith('-shieldweb'):
     #Send message
-    await message.channel.send("**You can find the whitepaper at <https://shield.shentu.technology>** \n*for more useful links visit* #resources")
+    await message.channel.send("**You can find the whitepaper at <https://shield.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
   
-  #Request Resources link
+  #Request Resources links
   if msg.lower().startswith('-useful') or msg.lower().startswith('-resources') or msg.lower().startswith('-links'):
     #Send message
-    f = open("resources.msg", "r")
-    resources_text=f.read()
-    f.close()
-    await message.channel.send(resources_text)
+    #fetch last message info in the Shentu-bot channel
+    resources_last_message=(await client.get_channel(int(resources_channel_production)).history(limit=1).flatten())[0]
+    await message.channel.send(resources_last_message.content + "\n\n You can also visit <#"+resources_channel_production+"> to see all links")
   
-  #Request Resources link
-  if msg.lower().startswith('-setuseful'):
-    new_resources_text = msg.partition(' ')[2]
-    f = open("resources.msg", "w")
-    f.write(new_resources_text)
-    f.close
+  #Request Github link 
+  if msg.lower().startswith('-git') or msg.lower().startswith('-github'):
+    #Send message
+    await message.channel.send("**You can find the Shentu Github at <https://github.com/ShentuChain/>** \n*for more useful links visit* <#resources_channel_production>")
+  
+  #Post Shentu Bot help 
+  if msg.lower().startswith('-shentuhelp'):
+    #fetch last message info in the Shentu-bot channel
+    bot_help_last_message =(await client.get_channel(int(bot_help_channel_production)).history(limit=1).flatten())[0]
+    #Send message
+    await message.channel.send(bot_help_last_message.content + "\n\n You can also visit <#"+bot_help_channel_production+"> to see all commands")
+  
+  #Shentu bot to repeat message
+  if msg.lower().startswith('-shentusay'):
+    #Pick up the text
+    say_text = msg.partition(' ')[2]
+    #Fetch messenger
+    message_author_id = message.author.id
+    #Fetch server
+    server = client.get_guild(int(production_server_id))
+    #fetch user
+    user = server.get_member(message_author_id) 
+    #Fetch authorized roles
+    admin_role = server.get_role(int(admin_role_id))
+    shentu_role = server.get_role(int(shentu_role_id))
+    chain_role = server.get_role(int(chain_role_id))
+    #Init accepted
+    accepted=0
+    #Loop through the roles (range is a bad workaround)
+    for r in range(15):
+      try:
+        role=user.roles[r]
+        if shentu_role == role or admin_role == role or chain_role_id == role:
+          accepted=1
+      except:
+        break
+    #If the user is allowed and message isn't empty the message will be posted
+    if accepted==1:
+      if say_text != "":
+        await message.channel.send(say_text)
+
+    
     
 
   
