@@ -50,6 +50,22 @@ def get_Chaindata(info):
   #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
+  
+def get_yield():
+  #Get full supply data
+  supply_data=get_Chaindata("total_supply")
+  supply_dataset=supply_data['supply']
+  uctk_total_supply=supply_dataset[2]['amount']
+  #Get staking data
+  staking_data=get_Chaindata("staked")
+  result_data=staking_data['result']
+  uctk_bonded=result_data['bonded_tokens']
+  #Get inflation data
+  inflation_data=get_Chaindata("inflation")
+  inflation=inflation_data['result']
+  #calculate yield %
+  yield_percentage=float(uctk_total_supply)/float(uctk_bonded)*float(inflation)*100
+  return(yield_percentage)
 
 #Fetch validator Data from Shentu Chain
 def get_validatordata(validator_address):
@@ -161,8 +177,8 @@ async def on_message(message):
     staked_percentage=(int(uctk_bonded)/int(uctk_total_supply))*100
     inflation_data=get_Chaindata("inflation")
     inflation=inflation_data['result']
-    #calculate yield
-    yield_percentage=float(uctk_total_supply)/float(uctk_bonded)*float(inflation)*100
+    #Fetch yield
+    yield_percentage=get_yield()
     #Send message
     await message.channel.send("Total supply: " + str('{:,}'.format(round(float(total_supply),2))) + "CTK\nBonded (staked): " + str('{:,}'.format(round(float(bonded),2)))+ "CTK \nUnbonding: " + str('{:,}'.format(round(float(not_bonded),2))) + "CTK\nStaked Percentage: "+ str('{:,}'.format(round(float(staked_percentage),2))) +"%\nYield: "+str('{:,}'.format(round(float(yield_percentage),2)))+ "%")
 
@@ -189,21 +205,43 @@ async def on_message(message):
 
   #Request staking yield
   if msg.lower().startswith('-apy') or msg.lower().startswith('-yield') or msg.lower().startswith('-apr'):
-    #Get full supply data
-    supply_data=get_Chaindata("total_supply")
-    supply_dataset=supply_data['supply']
-    uctk_total_supply=supply_dataset[2]['amount']
-    #Get staking data
-    staking_data=get_Chaindata("staked")
-    result_data=staking_data['result']
-    uctk_bonded=result_data['bonded_tokens']
-    #Get inflation data
-    inflation_data=get_Chaindata("inflation")
-    inflation=inflation_data['result']
-    #calculate yield %
-    yield_percentage=float(uctk_total_supply)/float(uctk_bonded)*float(inflation)*100
+    #Fetch yield
+    yield_percentage=get_yield()
     #Send message
     await message.channel.send("Inflation: " + str('{:,}'.format(round(float(yield_percentage),2)))+ "%")
+
+  #Request staking rewards
+  if msg.lower().startswith('-stakingrewards') or msg.lower().startswith('-srewards') or msg.lower().startswith('-scalc') or msg.lower().startswith('-stakingcalculator'):
+    staking_rewards_error = 0
+    validator_commission = 0
+    try:
+      validator_commission = msg.lower().split(' ')[1]
+    #Use 0 commission if none is given
+    except:
+      staked_quantity = 0
+    try:
+      staked_quantity = msg.lower().split(' ')[2]
+    #Use 1000CTK if none is given
+    except:
+      staked_quantity = 1000
+    
+    if int(validator_commission) > 100 or int(validator_commission) < 0 or int(staked_quantity) < 0:
+      staking_rewards_error=1
+    
+
+    if staking_rewards_error == 0:
+      #Fetch yield
+      yield_percentage=get_yield()
+      #Calculate staking rewards
+      year_reward=float(staked_quantity)*(float(yield_percentage)/100)*(1-(float(validator_commission)/100))
+      day_reward=year_reward/365
+      month_reward=day_reward*30
+      week_reward=day_reward*7
+      hour_reward=day_reward/24
+      #Send message
+      await message.channel.send("Given data used to calculate is "+ str('{:,}'.format(round(float(staked_quantity),4))) +"CTK with a validator commission of " + str(validator_commission) + "%\nCurrent yield: " + str(round(float(yield_percentage),2)) + "%\n1 Year     : " + str('{:,}'.format(round(float(year_reward),4))) + "CTK\n30 Days : " + str('{:,}'.format(round(float(month_reward),4))) + "CTK\n7 Days    : " + str('{:,}'.format(round(float(week_reward),4))) + "CTK\n1 Day       : " + str('{:,}'.format(round(float(day_reward),4))) + "CTK\n1 Hour     : " + str('{:,}'.format(round(float(hour_reward),4))) + "CTK\n*Please note that the staking yield is variable and this is only an estimation*")
+    else: 
+      await message.channel.send("Bad parameters given. Please use \'command validator commission staked quantity\'.\n Example: \'-stakingcalculator 5 2500\' ")
 
   #Request unbonding Validators
   if msg.lower().startswith('-jailed') or msg.lower().startswith('-unbonding'):
@@ -298,11 +336,6 @@ async def on_message(message):
     if accepted==1:
       if say_text != "":
         await message.channel.send(say_text)
-
-    
-    
-
-  
-    
+ 
 client.run(token)
 
