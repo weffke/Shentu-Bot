@@ -459,7 +459,11 @@ async def on_message(message):
     top_validator_description_data=top_validator_result_data['description']
     top_validator_moniker=top_validator_description_data['moniker']
     await message.channel.send("Running validators: " + str(bonded_amount) + "\nJailed validators: " + str(unbonding_amount) + "\nUnbonded validators: " + str(unbonded_amount)+"\n\nTop validator: " + top_validator_moniker + "\nTop validator power: "+ str('{:,}'.format(round(float(top_voting_power_percentage),2))) + "%")
-      
+ 
+  #Show supported valuta
+  if msg.lower().startswith('-valuta'):
+    await message.channel.send("US Dollar : usd | Euro : eur | Great Britain Pound : gbp | Korean Won : krw | Japanese Yen : jpy | Chinese Yuan : cny | Russian Rubles : rub | Indonesian Rupiah : idr | New Taiwan Dollar : twd")    
+     
  
 client.run(token)
 
