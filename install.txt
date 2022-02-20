@@ -4,5 +4,5 @@ pip3 install discord
 pip3 install python-dotenv
 
 touch jail.dat
-
+copy over requests.dat
 copy over .env for the bot token

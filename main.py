@@ -43,15 +43,31 @@ def get_Chaindata(info):
   #Fetch unbonding validators
   elif info=="unbonding":
     response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_UNBONDING")
+  #Fetch bonded validators
+  elif info=="bonded":
+    response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_BONDED")
+  #Fetch unbonded validators
+  elif info=="unbonded":
+    response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_UNBONDED")
+  #Fetch Chain info
+  elif info=="network":    
+    response = requests.get("http://35.172.164.222:1317/cosmos/base/tendermint/v1beta1/node_info")
   #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
+
+def get_total_supply():
+  uctk_total_supply=0
+  supply_data=get_Chaindata("total_supply")
+  supply_dataset=supply_data['supply']
+  for supply_result in supply_data['supply'] :
+    if supply_result['denom']=="uctk":
+      uctk_total_supply=supply_result['amount']
+  return (uctk_total_supply)
   
 def get_yield():
   #Get full supply data
-  supply_data=get_Chaindata("total_supply")
-  supply_dataset=supply_data['supply']
-  uctk_total_supply=supply_dataset[2]['amount']
+  uctk_total_supply=get_total_supply()
   #Get staking data
   staking_data=get_Chaindata("staked")
   result_data=staking_data['result']
@@ -114,9 +130,10 @@ async def jailed():
       unbinding_validator_description_data=unbinding_validator_result_data['description']
       unbinding_validator_moniker=unbinding_validator_description_data['moniker']
       #Send message
-      await channel.send(":warning::warning:**Validator jailed**:warning::warning:\n""**" + unbinding_validator_moniker + "** - " + unbinding_validator_address)
+      await channel.send(":warning::warning:**Validator jailed**:warning::warning:\n""**" + str(unbinding_validator_moniker) + "** - " + str(unbinding_validator_address))
     #Append new jailed validator list 
     new_list+=unbinding_validator_address + "-"
+    known_jailed=0
   #Overwrite known jailed validators
   f = open("jail.dat", "w")
   f.write(new_list)
@@ -193,9 +210,7 @@ async def on_message(message):
     uctk_not_bonded=result_data['not_bonded_tokens']
     uctk_bonded=result_data['bonded_tokens']
     #Get full supply data
-    supply_data=get_Chaindata("total_supply")
-    supply_dataset=supply_data['supply']
-    uctk_total_supply=supply_dataset[2]['amount']
+    uctk_total_supply=get_total_supply()
     #Convert from uctk to CTK
     total_supply=int(uctk_total_supply)/1000000
     bonded=int(uctk_bonded)/1000000
@@ -212,9 +227,7 @@ async def on_message(message):
   #Request Total supply
   if msg.lower().startswith('-total'):
     #Get full supply data
-    supply_data=get_Chaindata("total_supply")
-    supply_dataset=supply_data['supply']
-    uctk_total_supply=supply_dataset[2]['amount']
+    uctk_total_supply=get_total_supply()
     #Convert from uctk to CTK
     total_supply=int(uctk_total_supply)/1000000
     #Send message
@@ -235,7 +248,7 @@ async def on_message(message):
     #Fetch yield
     yield_percentage=get_yield()
     #Send message
-    await message.channel.send("Inflation: " + str('{:,}'.format(round(float(yield_percentage),2)))+ "%")
+    await message.channel.send("Yield: " + str('{:,}'.format(round(float(yield_percentage),2)))+ "%")
 
   #Request staking rewards
   if msg.lower().startswith('-stakingrewards') or msg.lower().startswith('-srewards') or msg.lower().startswith('-scalc') or msg.lower().startswith('-stakingcalculator'):
@@ -363,6 +376,90 @@ async def on_message(message):
     if accepted==1:
       if say_text != "":
         await message.channel.send(say_text)
+ 
+  #Add Shentu Bot feature request
+  if msg.lower().startswith('-request'):
+    #Read message and get the requested feature
+    try:
+      requested_feature = str(msg.split(',')[1])
+    except:
+      await message.channel.send("Couldn't read the request please make sure to use -request ,requested feature")
+    #Use USD if no currency is given
+    stripped_request = requested_feature
+    new_feature_request= str(stripped_request) + "-_-" 
+    #Add to list 
+    f = open("features.dat", "a")
+    f.write(new_feature_request)
+    f.close
+    #Send message
+    await message.channel.send("\'" + requested_feature + "\' added to the list of requested features")
+    
+    
+  #Show Shentu Bot feature requests
+  if msg.lower().startswith('-showrequests'):
+    #read existing list
+    f = open("features.dat", "r")
+    old_list=f.read()
+    f.close()
+    features_message = "List of requested features: \n\n"
+    requested_features=old_list.split('-_-')
+    #loop through list and add to message
+    for feature_request in requested_features:
+      if feature_request != "":
+        features_message = features_message + "-" + feature_request + "\n"
+    #Send message
+    await message.channel.send(features_message)
+    
+   
+  #Show Shentu versions
+  if msg.lower().startswith('-version'):
+    #Get full network data
+    network_data=get_Chaindata("network")
+    protocol_data=network_data['default_node_info']
+    application_data=network_data['application_version']
+    #Send message
+    protocol_version=protocol_data['network']
+    application_version=application_data['app_name'] + " " + application_data['version']
+    await message.channel.send("Network version: " + protocol_version + "\nValidator binary version: " + application_version )    
+    
+  #Show Validator info
+  if msg.lower().startswith('-validatorinfo') or msg.lower().startswith('-validators'):
+    #Initialize variables
+    unbonding_amount=0
+    bonded_amount=0
+    unbonded_amount=0
+    top_voting_power=0
+    #Get all data
+    staking_data=get_Chaindata("staked")
+    result_data=staking_data['result']
+    uctk_bonded=result_data['bonded_tokens']
+    uctk_not_bonded=result_data['not_bonded_tokens']
+    unbonding_data=get_Chaindata("unbonding")
+    bonded_data=get_Chaindata("bonded")
+    unbonded_data=get_Chaindata("unbonded")
+    for unbonding_validator in unbonding_data['result']:
+      #Count number of unbonding validators
+      unbonding_amount+=1
+    for unbonded_validator in unbonded_data['result']:
+      #Count number of unbonding validators
+      unbonded_amount+=1   
+    for bonded_validator in bonded_data['result']:
+      #Count number of unbonding validators
+      bonded_amount+=1
+      validator_voting_power=bonded_validator['tokens'] 
+      if int(top_voting_power)<int(validator_voting_power):
+        top_voting_power=validator_voting_power
+        top_validator=bonded_validator['operator_address']
+      
+    top_voting_power_percentage=float(top_voting_power)/float(uctk_bonded)*100
+    #Fetch Validator data
+    top_validator_data= get_validatordata(top_validator)
+    #Fetch Validator moniker (name)
+    top_validator_result_data=top_validator_data['result']
+    top_validator_description_data=top_validator_result_data['description']
+    top_validator_moniker=top_validator_description_data['moniker']
+    await message.channel.send("Running validators: " + str(bonded_amount) + "\nJailed validators: " + str(unbonding_amount) + "\nUnbonded validators: " + str(unbonded_amount)+"\n\nTop validator: " + top_validator_moniker + "\nTop validator power: "+ str('{:,}'.format(round(float(top_voting_power_percentage),2))) + "%")
+      
  
 client.run(token)
 
