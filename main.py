@@ -20,6 +20,7 @@ production_server_id = os.environ.get('production_server_id')
 admin_role_id = os.environ.get('admin_role_id')
 shentu_role_id = os.environ.get('shentu_role_id')
 chain_role_id = os.environ.get('chain_role_id')
+admin_warning_channel_production=os.environ.get('admin_warning_channel_production')
 
 #Fetch Data from CoinGecko
 def get_CGdata(cur):
@@ -95,6 +96,8 @@ async def on_ready():
   discord.CustomActivity(name="-shentuhelp for info", emoji='🖥️')
   #Start the Jailed check
   jailed.start()
+  #Spammer alert
+  spammer.start()
 
   
 
@@ -110,6 +113,7 @@ async def jailed():
   f = open("jail.dat", "r")
   old_list=f.read()
   f.close()
+  #print ("jailed test")
   #Make a list of known jailed addresses by splitting the jail.dat file content
   known_jailed_addresses=old_list.split('-')
   #Fetch full list of jailed validators
@@ -133,11 +137,77 @@ async def jailed():
       await channel.send(":warning::warning:**Validator jailed**:warning::warning:\n""**" + str(unbinding_validator_moniker) + "** - " + str(unbinding_validator_address))
     #Append new jailed validator list 
     new_list+=unbinding_validator_address + "-"
+    #Reset known variable
     known_jailed=0
   #Overwrite known jailed validators
   f = open("jail.dat", "w")
   f.write(new_list)
   f.close
+
+@tasks.loop(seconds=900.0)
+async def spammer():
+  #Initialize variables
+  known_spammer_name=0
+  known_spammer_display_name=0
+  new_name_list = ""
+  new_display_name_list = ""
+  #Define channel to post in
+  channel = await client.fetch_channel(admin_warning_channel_production)
+  #Get the template list
+  f = open("spammer_templates.dat", "r")
+  template_list=f.read()
+  f.close()
+  #Get the name list
+  f = open("known_spammer_name.dat", "r")
+  spammer_name_list=f.read()
+  f.close()
+  #Get the display name list
+  f = open("known_spammer_display_name.dat", "r")
+  spammer_display_name_list=f.read()
+  f.close()
+  #transform lists into arrays
+  templates=template_list.split('-')
+  spammer_names=spammer_name_list.split('_-_')
+  spammer_display_names=spammer_display_name_list.split('_-_')
+  #Define server
+  server = client.get_guild(int(production_server_id))
+  #Get all members
+  member_list = server.members
+  #Loop through members
+  for member in member_list:
+    #Check all templates
+    for template in templates:
+      #Check if name contains current template
+      if template in member.display_name.lower():
+        #Add to new list
+        new_display_name_list += member.display_name + "_-_"
+        #Verify if already flagged before
+        for display_name in spammer_display_names:
+          if  display_name == member.display_name:
+            known_spammer_display_name=1
+        #If not known post in channel
+        if known_spammer_display_name == 0:
+          await channel.send(member.display_name + " display name found")
+      #Check if name contains current template
+      if template in member.name.lower():
+        new_name_list += member.name + "_-_"
+        #Verify if already flagged before
+        for name in spammer_names:
+          if name == member.name:
+            known_spammer_name=1
+        #If not known post in channe
+        if known_spammer_name == 0:
+          await channel.send(member.name + " name found")
+    #Reset known variables
+    known_spammer_display_name=0
+    known_spammer_name=0
+  #write new list
+  f = open("known_spammer_name.dat", "w")
+  f.write(new_name_list)
+  f.close      	 
+  f = open("known_spammer_display_name.dat", "w")
+  f.write(new_display_name_list)
+  f.close    
 
 #Read Messages
 @client.event
@@ -307,27 +377,27 @@ async def on_message(message):
   #Request shentu site link
   if msg.lower().startswith('-site'):
     #Send message
-    await message.channel.send("**You can find the official website at: <https://www.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
+    await message.channel.send("**You can find the official website at: <https://www.shentu.technology>** \n*for more useful links visit* <#"+resources_channel_production+">")
   
   #Request Whitepaper link
   if msg.lower().startswith('-whitepaper'):
     #Send message
-    await message.channel.send("**You can find the whitepaper at: <https://www.shentu.technology/whitepaper>** \n*for more useful links visit* <#resources_channel_production>")
+    await message.channel.send("**You can find the whitepaper at: <https://www.shentu.technology/whitepaper>** \n*for more useful links visit* <#"+resources_channel_production+">")
   
   #Request official wallet link
   if msg.lower().startswith('-wallet') or msg.lower().startswith('-deepwallet'):
     #Send message
-    await message.channel.send("**You can find Shentu's official wallet, DeepWallet at: <https://wallet.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
+    await message.channel.send("**You can find Shentu's official wallet, DeepWallet at: <https://wallet.shentu.technology>** \n*for more useful links visit* <#"+resources_channel_production+">")
   
   #Request official chain explorer
   if msg.lower().startswith('-chain') or msg.lower().startswith('-explorer'):
     #Send message
-    await message.channel.send("**You can find the shentu chain explorer at: <https://explorer.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
+    await message.channel.send("**You can find the shentu chain explorer at: <https://explorer.shentu.technology>** \n*for more useful links visit* <#"+resources_channel_production+">")
   
   #Request Shield link
   if msg.lower().startswith('-shieldinfo') or msg.lower().startswith('-shieldweb'):
     #Send message
-    await message.channel.send("**You can find the whitepaper at <https://shield.shentu.technology>** \n*for more useful links visit* <#resources_channel_production>")
+    await message.channel.send("**You can find the whitepaper at <https://shield.shentu.technology>** \n*for more useful links visit* <#" + resources_channel_production + ">")
   
   #Request Resources links
   if msg.lower().startswith('-useful') or msg.lower().startswith('-resources') or msg.lower().startswith('-links'):
@@ -339,13 +409,15 @@ async def on_message(message):
   #Request Github link 
   if msg.lower().startswith('-git') or msg.lower().startswith('-github'):
     #Send message
-    await message.channel.send("**You can find the Shentu Github at <https://github.com/ShentuChain/>** \n*for more useful links visit* <#resources_channel_production>")
+    await message.channel.send("**You can find the Shentu Github at <https://github.com/ShentuChain/>** \n*for more useful links visit* <#"+resources_channel_production+">")
   
   #Post Shentu Bot help 
   if msg.lower().startswith('-shentuhelp'):
-    #fetch last message info in the Shentu-bot channel
-    bot_help_last_message =(await client.get_channel(int(bot_help_channel_production)).history(limit=1).flatten())[0]
+    #fetch last 2 messages info in the Shentu-bot channel
+    bot_help_second_last_message =(await client.get_channel(int(bot_help_channel_production)).history(limit=2).flatten())[1]
+    bot_help_last_message =(await client.get_channel(int(bot_help_channel_production)).history(limit=2).flatten())[0]
     #Send message
+    await message.channel.send(bot_help_second_last_message.content)
     await message.channel.send(bot_help_last_message.content + "\n\n You can also visit <#"+bot_help_channel_production+"> to see all commands")
   
   #Shentu bot to repeat message
