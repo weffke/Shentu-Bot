@@ -53,6 +53,11 @@ def get_Chaindata(info):
   #Fetch Chain info
   elif info=="network":    
     response = requests.get("http://35.172.164.222:1317/cosmos/base/tendermint/v1beta1/node_info")
+  #Fetch Shield Provider info
+  elif info=="shieldproviders":
+    response = requests.get("http://35.172.164.222:1317/shield/providers")
+  elif info=="shieldpurchases":
+    response = requests.get("http://35.172.164.222:1317/shield/purchases")
   #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
@@ -401,9 +406,9 @@ async def on_message(message):
   
   #Request Resources links
   if msg.lower().startswith('-useful') or msg.lower().startswith('-resources') or msg.lower().startswith('-links'):
-    #Send message
-    #fetch last message info in the Shentu-bot channel
+    #fetch last message info in the resources channel
     resources_last_message=(await client.get_channel(int(resources_channel_production)).history(limit=1).flatten())[0]
+    #Send message
     await message.channel.send(resources_last_message.content + "\n\n You can also visit <#"+resources_channel_production+"> to see all links")
   
   #Request Github link 
@@ -494,6 +499,17 @@ async def on_message(message):
     application_version=application_data['app_name'] + " " + application_data['version']
     await message.channel.send("Network version: " + protocol_version + "\nValidator binary version: " + application_version )    
     
+  #Show Social media links
+  if msg.lower().startswith('-social'):
+    
+    #fetch last message info in the resources channel
+    resources_last_message=(await client.get_channel(int(resources_channel_production)).history(limit=1).flatten())[0]
+    #Trim to only get social media
+    resources_last_message_string=resources_last_message.content
+    social_media=resources_last_message_string.split("***Social Media***",1)[1] 
+    #Send message
+    await message.channel.send("***Social Media***" + social_media) 
+    
   #Show Validator info
   if msg.lower().startswith('-validatorinfo') or msg.lower().startswith('-validators'):
     #Initialize variables
@@ -535,7 +551,38 @@ async def on_message(message):
   #Show supported valuta
   if msg.lower().startswith('-valuta'):
     await message.channel.send("US Dollar : usd | Euro : eur | Great Britain Pound : gbp | Korean Won : krw | Japanese Yen : jpy | Chinese Yuan : cny | Russian Rubles : rub | Indonesian Rupiah : idr | New Taiwan Dollar : twd")    
-     
+  
+  
+  #Show shield info
+  if msg.lower().startswith('-shield'):
+    #init variables
+    total_collateral=0
+    total_bonded=0
+    total_purchased=0
+    #Get Shield data
+    shield_provider_data=get_Chaindata("shieldproviders")
+    shield_provider_result_data=shield_provider_data['result']
+    shield_purchases_data=get_Chaindata("shieldpurchases")
+    shield_purchases_result_data=shield_purchases_data['result']
+    for provider in shield_provider_result_data:
+      total_collateral += int(provider['collateral'])
+      total_bonded += int(provider['delegation_bonded'])
+    for purchase in shield_purchases_result_data:
+      shield_purchases_servicefees_data=purchase['service_fees']
+      print(shield_purchases_servicefees_data)
+      shield_purchases_native_data=shield_purchases_servicefees_data['native']
+      print(shield_purchases_native_data)
+      for native in shield_purchases_native_data:
+        print(native)
+        print(native['amount'])
+        total_purchased += float(native['amount'])
+    #Convert uCTK to CTK
+    total_collateral_ctk=total_collateral/1000000
+    total_bonded_ctk=total_bonded/1000000
+    total_purchased_ctk=total_purchased/1000000
+    #Send message
+    await message.channel.send("Total Collateral: " + str('{:,}'.format(round(float(total_collateral_ctk),4))) + "\nTotal bonded: " + str('{:,}'.format(round(float(total_bonded_ctk),4))) + "\nTotal Shields purchased: " + str('{:,}'.format(round(float(total_purchased_ctk),4))))    
+         
  
 client.run(token)
 
