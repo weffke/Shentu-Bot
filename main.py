@@ -107,7 +107,7 @@ async def on_ready():
   
 
 
-@tasks.loop(seconds=30.0)
+@tasks.loop(seconds=60.0)
 async def jailed():
   #Initialize variable
   known_jailed=0
@@ -340,7 +340,7 @@ async def on_message(message):
     except:
       staked_quantity = 1000
     
-    if int(validator_commission) > 100 or int(validator_commission) < 0 or int(staked_quantity) < 0:
+    if float(validator_commission) > 100 or float(validator_commission) < 0 or float(staked_quantity) < 0:
       staking_rewards_error=1
     
 
