@@ -16,6 +16,13 @@ warning_channel_production = os.environ.get('warning_channel_production')
 warning_channel_test = os.environ.get('warning_channel_test')
 resources_channel_production = os.environ.get('resources_channel_production')
 bot_help_channel_production = os.environ.get('bot_help_channel_production')
+bot_git_channel_production = os.environ.get('bot_git_channel_production')
+bot_wallet_channel_production = os.environ.get('bot_wallet_channel_production')
+bot_explorer_channel_production = os.environ.get('bot_explorer_channel_production')
+bot_whitepaper_channel_production = os.environ.get('bot_whitepaper_channel_production')
+bot_shentusite_channel_production = os.environ.get('bot_shentusite_channel_production')
+bot_townhallrecording_channel_production = os.environ.get('bot_townhallrecording_channel_production')
+bot_shield_channel_production = os.environ.get('bot_shield_channel_production')
 production_server_id = os.environ.get('production_server_id')
 admin_role_id = os.environ.get('admin_role_id')
 shentu_role_id = os.environ.get('shentu_role_id')
@@ -381,28 +388,38 @@ async def on_message(message):
   
   #Request shentu site link
   if msg.lower().startswith('-site'):
+    #fetch last message from the shentu-site channel
+    bot_shentusite_last_message = (await client.get_channel(int(bot_shentusite_channel_production)).history(limit=2).flatten())[0]
     #Send message
-    await message.channel.send("**You can find the official website at: <https://www.shentu.technology>** \n*for more useful links visit* <#"+resources_channel_production+">")
+    await message.channel.send(bot_shentusite_last_message.content)
   
   #Request Whitepaper link
   if msg.lower().startswith('-whitepaper'):
+    #fetch last message from the whitepaper channel
+    bot_whitepaper_last_message = (await client.get_channel(int(bot_whitepaper_channel_production)).history(limit=2).flatten())[0]
     #Send message
-    await message.channel.send("**You can find the whitepaper at: <https://www.shentu.technology/whitepaper>** \n*for more useful links visit* <#"+resources_channel_production+">")
+    await message.channel.send(bot_whitepaper_last_message.content)
   
   #Request official wallet link
   if msg.lower().startswith('-wallet') or msg.lower().startswith('-deepwallet'):
+    #fetch last message from the wallet channel
+    bot_wallet_last_message = (await client.get_channel(int(bot_wallet_channel_production)).history(limit=2).flatten())[0]
     #Send message
-    await message.channel.send("**You can find Shentu's official wallet, DeepWallet at: <https://wallet.shentu.technology>** \n*for more useful links visit* <#"+resources_channel_production+">")
+    await message.channel.send(bot_wallet_last_message.content)
   
   #Request official chain explorer
   if msg.lower().startswith('-chain') or msg.lower().startswith('-explorer'):
+    #fetch last message from the explorer channel
+    bot_explorer_last_message = (await client.get_channel(int(bot_explorer_channel_production)).history(limit=2).flatten())[0]
     #Send message
-    await message.channel.send("**You can find the shentu chain explorer at: <https://explorer.shentu.technology>** \n*for more useful links visit* <#"+resources_channel_production+">")
+    await message.channel.send(bot_explorer_last_message.content)
   
   #Request Shield link
-  if msg.lower().startswith('-shieldinfo') or msg.lower().startswith('-shieldweb'):
+  if msg.lower().startswith('-shieldweb'):
+    #fetch last message from the shield channel
+    bot_shield_last_message = (await client.get_channel(int(bot_shield_channel_production)).history(limit=2).flatten())[0]
     #Send message
-    await message.channel.send("**You can find the whitepaper at <https://shield.shentu.technology>** \n*for more useful links visit* <#" + resources_channel_production + ">")
+    await message.channel.send(bot_shield_last_message.content)
   
   #Request Resources links
   if msg.lower().startswith('-useful') or msg.lower().startswith('-resources') or msg.lower().startswith('-links'):
@@ -413,8 +430,10 @@ async def on_message(message):
   
   #Request Github link 
   if msg.lower().startswith('-git') or msg.lower().startswith('-github'):
+    #fetch last message from the git channel
+    bot_github_last_message = (await client.get_channel(int(bot_git_channel_production)).history(limit=2).flatten())[0]
     #Send message
-    await message.channel.send("**You can find the Shentu Github at <https://github.com/ShentuChain/>** \n*for more useful links visit* <#"+resources_channel_production+">")
+    await message.channel.send(bot_github_last_message.content)
   
   #Post Shentu Bot help 
   if msg.lower().startswith('-shentuhelp'):
@@ -424,6 +443,13 @@ async def on_message(message):
     #Send message
     await message.channel.send(bot_help_second_last_message.content)
     await message.channel.send(bot_help_last_message.content + "\n\n You can also visit <#"+bot_help_channel_production+"> to see all commands")
+
+  #Request Townhall recording link 
+  if msg.lower().startswith('-threcording'):
+    #fetch last message from the townhallrecording channel
+    bot_townhallrecording_last_message = (await client.get_channel(int(bot_townhallrecording_channel_production)).history(limit=2).flatten())[0]
+    #Send message
+    await message.channel.send(bot_townhallrecording_last_message.content)
   
   #Shentu bot to repeat message
   if msg.lower().startswith('-shentusay'):
@@ -554,7 +580,7 @@ async def on_message(message):
   
   
   #Show shield info
-  if msg.lower().startswith('-shield'):
+  if msg.lower().startswith('-shieldinfo'):
     #init variables
     total_collateral=0
     total_bonded=0
