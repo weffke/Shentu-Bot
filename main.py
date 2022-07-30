@@ -28,6 +28,7 @@ admin_role_id = os.environ.get('admin_role_id')
 shentu_role_id = os.environ.get('shentu_role_id')
 chain_role_id = os.environ.get('chain_role_id')
 admin_warning_channel_production=os.environ.get('admin_warning_channel_production')
+shentu_endpoint=os.environ.get('shentu_endpoint')
 
 #Fetch Data from CoinGecko
 def get_CGdata(cur):
@@ -41,30 +42,30 @@ def get_CGdata(cur):
 def get_Chaindata(info):
   #Fetch Staking data
   if info=="staked":
-    response = requests.get("http://35.172.164.222:1317/staking/pool")
+    response = requests.get(shentu_endpoint + "/staking/pool")
   #Fetch Total supply data
   elif info=="total_supply":
-    response = requests.get("http://35.172.164.222:1317/cosmos/bank/v1beta1/supply")
+    response = requests.get(shentu_endpoint + "/cosmos/bank/v1beta1/supply")
   #Fetch Inflation data
   elif info=="inflation":
-    response = requests.get("http://35.172.164.222:1317/minting/inflation")
+    response = requests.get(shentu_endpoint + "/minting/inflation")
   #Fetch unbonding validators
   elif info=="unbonding":
-    response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_UNBONDING")
+    response = requests.get(shentu_endpoint + "/staking/validators?status=BOND_STATUS_UNBONDING")
   #Fetch bonded validators
   elif info=="bonded":
-    response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_BONDED")
+    response = requests.get(shentu_endpoint + "/staking/validators?status=BOND_STATUS_BONDED")
   #Fetch unbonded validators
   elif info=="unbonded":
-    response = requests.get("http://35.172.164.222:1317/staking/validators?status=BOND_STATUS_UNBONDED")
+    response = requests.get(shentu_endpoint + "/staking/validators?status=BOND_STATUS_UNBONDED")
   #Fetch Chain info
   elif info=="network":    
-    response = requests.get("http://35.172.164.222:1317/cosmos/base/tendermint/v1beta1/node_info")
+    response = requests.get(shentu_endpoint + "/cosmos/base/tendermint/v1beta1/node_info")
   #Fetch Shield Provider info
   elif info=="shieldproviders":
-    response = requests.get("http://35.172.164.222:1317/shield/providers")
+    response = requests.get(shentu_endpoint + "/shield/providers")
   elif info=="shieldpurchases":
-    response = requests.get("http://35.172.164.222:1317/shield/purchases")
+    response = requests.get(shentu_endpoint + "/shield/purchases")
   #Load data and return
   json_data = json.loads(response.text)
   return(json_data)
@@ -95,7 +96,7 @@ def get_yield():
 #Fetch validator Data from Shentu Chain
 def get_validatordata(validator_address):
   #Fetch Validator data for the given address
-  response = requests.get("http://35.172.164.222:1317/staking/validators/" + validator_address)
+  response = requests.get(shentu_endpoint + "/staking/validators/" + validator_address)
   json_data = json.loads(response.text)
   return(json_data)
 
